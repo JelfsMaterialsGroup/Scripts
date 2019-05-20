@@ -1,0 +1,27 @@
+import rdkit
+from rdkit import Chem
+from rdkit.Chem import AllChem
+
+mol = Chem.MolFromMolFile('input.mol')
+imine = Chem.MolFromSmiles('CC=NC')
+subs = mol.GetSubstructMatches(imine)
+
+bonds = []
+for i in subs:
+  bonds.append(i[1:3])
+bond_ids = [mol.GetBondBetweenAtoms(x,y).GetIdx() for x,y in bonds]
+new_mol = Chem.FragmentOnBonds(mol,bond_ids)
+
+new_smiles = Chem.MolToSmiles(new_mol, True)
+new_split = new.split('.')
+
+corrected_fragments = []
+for i in new_split:
+  a = AllChem.ReplaceSubstructs(Chem.MolFromSmiles(str(i)), Chem.MolFromSmarts('C=[!R]'), Chem.MolFromSmarts('C=O'), replaceAll=True)
+  b = Chem.MolToSmiles(a[0])
+  c = Chem.MolFromSmiles(b)
+  d = AllChem.ReplaceSubstructs(c, Chem.MolFromSmarts('N=[!R]'), Chem.MolFromSmarts('N'), replaceAll=True)
+  corrected_fragments.append(d[0])
+
+building_blocks_dict = {i:corrected_fragments.count(i) for i in corrected_fragments}
+  
