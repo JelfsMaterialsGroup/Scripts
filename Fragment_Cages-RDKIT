@@ -2,7 +2,7 @@ import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-mol = Chem.MolFromMolFile('100.mol')
+mol = Chem.MolFromMolFile('input.mol')
 imine = Chem.MolFromSmiles('CC=NC')
 subs = mol.GetSubstructMatches(imine)
 
