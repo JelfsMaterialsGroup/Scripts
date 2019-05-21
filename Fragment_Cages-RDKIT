@@ -1,5 +1,5 @@
 import rdkit
-from rdkit import AllChem
+from rdkit.Chem import AllChem
 
 mol = AllChem.MolFromMolFile('input.mol')
 imine = AllChem.MolFromSmiles('CC=NC')
