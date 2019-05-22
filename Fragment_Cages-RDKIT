@@ -1,7 +1,8 @@
 import rdkit
 from rdkit.Chem import AllChem
+import operator
 
-mol = AllChem.MolFromMolFile('input.mol')
+mol = AllChem.MolFromMolFile('test.mol')
 imine = AllChem.MolFromSmiles('CC=NC')
 subs = mol.GetSubstructMatches(imine)
 
@@ -15,12 +16,23 @@ new_smiles = AllChem.MolToSmiles(new_mol, True)
 new_split = new_smiles.split('.')
 
 corrected_fragments = []
+uncorrected_fragments = []
+
 for i in new_split:
-  a = AllChem.ReplaceSubstructs(AllChem.MolFromSmiles(str(i)), AllChem.MolFromSmarts('C=[!R]'), AllChem.MolFromSmarts('C=O'), replaceAll=True)
+  a = AllChem.ReplaceSubstructs(AllChem.MolFromSmiles(str(i)), AllChem.MolFromSmarts('C=[D1]'), AllChem.MolFromSmarts('C=O'), replaceAll=True)
   b = AllChem.MolToSmiles(a[0])
   c = AllChem.MolFromSmiles(b)
-  d = AllChem.ReplaceSubstructs(c, AllChem.MolFromSmarts('N=[!R]'), AllChem.MolFromSmarts('N'), replaceAll=True)
-  corrected_fragments.append(d[0])
+
+  if '*' not in str(b):
+    au = AllChem.ReplaceSubstructs(AllChem.MolFromSmiles(str(i)), AllChem.MolFromSmarts('C=[D1]'), AllChem.MolFromSmarts('C=[D1]'), replaceAll=True)
+    corrected_fragments.append(c)
+    uncorrected_fragments.append(au[0])
+
+  else:
+    d = AllChem.ReplaceSubstructs(c, AllChem.MolFromSmarts('N=[D1]'), AllChem.MolFromSmarts('N'), replaceAll=True)
+    au = AllChem.ReplaceSubstructs(c, AllChem.MolFromSmarts('N=[D1]'), AllChem.MolFromSmarts('[D1]'), replaceAll=True)
+    corrected_fragments.append(d[0])
+    uncorrected_fragments.append(au[0])
 
 smiles_fragments = []
 for i in corrected_fragments:
@@ -28,3 +40,37 @@ for i in corrected_fragments:
 
 building_blocks_dict = {i:smiles_fragments.count(i) for i in smiles_fragments}
 print(building_blocks_dict)
+
+uncorrected_smiles_fragments = []
+for i in uncorrected_fragments:
+  uncorrected_smiles_fragments.append(AllChem.MolToSmiles(i))
+
+unknown_functional_group = AllChem.MolFromSmiles('*')
+number_of_groups = []
+for i in uncorrected_smiles_fragments:
+  a = AllChem.MolFromSmiles(i)
+  b = a.GetSubstructMatches(unknown_functional_group)
+  number_of_groups.append(len(b))
+  
+functional_group_dict = {i:number_of_groups.count(i) for i in number_of_groups}
+sorted_fgd = sorted(functional_group_dict.items(), key=operator.itemgetter(0))
+
+if str(sorted_fgd) == '[(2, 3), (3, 2)]':
+  topology = 'stk.TwoPlusThree'
+elif str(sorted_fgd) == '[(2, 6), (3, 4)]':
+  topology = 'stk.FourPlusSix'
+elif str(sorted_fgd) == '[(2, 9), (3, 6)]':
+  topology = 'stk.SixPlusNine'
+elif str(sorted_fgd) == '[(2, 12), (3, 8)]':
+  topology = 'stk.EightPlusTwelve'
+
+elif str(sorted_fgd) == '[(3, 4), (4, 2)]':
+  topology = 'stk.TwoPlusFour'
+elif str(sorted_fgd) == '[(3, 6), (4, 3)]':
+  topology = 'stk.ThreePlusSix'
+elif str(sorted_fgd) == '[(3, 12), (4, 6)]':
+  topology = 'stk.SixPlusTwelve'
+else:
+  topology = 'unknown'
+
+print(topology)
